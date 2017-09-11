@@ -26,10 +26,25 @@ type keyring struct {
 
 var errLocked = errors.New("agent: locked")
 
-// NewTKeyring returns an Agent that holds keys in memory.  It is safe
-// for concurrent use by multiple goroutines.
-func NewTKeyring() agent.Agent {
-	return &keyring{}
+// NewTKeyring returns an Agent that holds keys in the Trusted Key app.
+// It is safe for concurrent use by multiple goroutines.
+func NewTKeyring(identities []TKIdentity) agent.Agent {
+	r := &keyring{}
+
+	for _, identity := range identities {
+		signer, err := NewTKSigner(identity)
+		if err != nil {
+			panic(err)
+		}
+
+		p := privKey{
+			signer:  signer,
+			comment: identity.addr,
+		}
+		r.keys = append(r.keys, p)
+	}
+
+	return r
 }
 
 func (r *keyring) List() ([]*agent.Key, error) {
@@ -52,44 +67,31 @@ func (r *keyring) List() ([]*agent.Key, error) {
 }
 
 func (r *keyring) Sign(key ssh.PublicKey, data []byte) (*ssh.Signature, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
 	if r.locked {
 		return nil, errLocked
 	}
+	r.mutex.Lock()
 
 	wanted := key.Marshal()
+	var signer ssh.Signer
 	for _, k := range r.keys {
 		if bytes.Equal(k.signer.PublicKey().Marshal(), wanted) {
-			return k.signer.Sign(rand.Reader, data)
+			signer = k.signer
+			break
 		}
 	}
 
-	return nil, errors.New("not found")
+	// Unlock before we actually call sign to prevent deadlocks
+	r.mutex.Unlock()
+	if signer == nil {
+		return nil, errors.New("signer for public key not found")
+	}
+
+	return signer.Sign(rand.Reader, data)
 }
 
 func (r *keyring) Add(key agent.AddedKey) error {
-	// TODO: Split add into internal method and return error
-	// Adding via agent protocol should not be supported
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	if key.LifetimeSecs > 0 {
-		return errors.New("Key lifetimes not supported")
-	}
-
-	signer, err := NewTKSigner(nil, nil)
-	if err != nil {
-		return err
-	}
-
-	p := privKey{
-		signer:  signer,
-		comment: key.Comment,
-	}
-	r.keys = append(r.keys, p)
-
-	return nil
+	return errors.New("Removing not supported, edit config file and reload")
 }
 
 func (r *keyring) Remove(key ssh.PublicKey) error {

@@ -1,30 +1,42 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"golang.org/x/crypto/ssh/agent"
 	"io"
 	"log"
 	"net"
 	"os"
+	"os/user"
+	"path"
 )
 
 func main() {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
+	configPath := flag.String("config",
+		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
+		"/path/to/conf.json")
+	flag.Parse()
+
 	stderr := log.New(os.Stderr, "", 0)
-	keyring := NewTKeyring()
 	listener, err := net.Listen("unix", os.Getenv("SSH_AUTH_SOCK"))
 	if err != nil {
 		panic(fmt.Sprintf("Listen error: %s", err))
 	}
 	defer listener.Close()
 
-	// TODO: Parse config file and add identities from there
-	err = keyring.Add(agent.AddedKey{
-		PrivateKey:   nil, // NO!
-		Certificate:  nil, // All cert details are stored on users phone
-		Comment:      "0x3705e3d8b450dcb0826b8d9e7cefbd99db2f417a",
-		LifetimeSecs: 0,
-	})
+	identities, err := ReadConfig(*configPath)
+	if err != nil {
+		stderr.Println(fmt.Sprintf("Missing configuration in '%s'", *configPath))
+		os.Exit(1)
+	}
+
+	keyring := NewTKeyring(identities)
 	if err != nil {
 		log.Panic(err)
 	}
