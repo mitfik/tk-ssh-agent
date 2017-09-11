@@ -6,6 +6,7 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     go
+    upx
     gocode
     golint
   ];

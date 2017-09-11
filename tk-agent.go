@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"log"
 	"sync"
 )
 
@@ -34,7 +33,6 @@ func NewTKeyring() agent.Agent {
 }
 
 func (r *keyring) List() ([]*agent.Key, error) {
-	log.Println("List")
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if r.locked {
