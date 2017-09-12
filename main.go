@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	stderr := log.New(os.Stderr, "", 0)
+
 	usr, err := user.Current()
 	if err != nil {
 		panic(err)
@@ -23,12 +25,26 @@ func main() {
 		"/path/to/conf.json")
 	flag.Parse()
 
-	stderr := log.New(os.Stderr, "", 0)
-	listener, err := net.Listen("unix", os.Getenv("SSH_AUTH_SOCK"))
+	sockPath, envSet := os.LookupEnv("SSH_AUTH_SOCK")
+	if !envSet {
+		sockPath = "/tmp/tk-ssh-auth.sock"
+	}
+
+	listener, err := net.Listen("unix", sockPath)
 	if err != nil {
 		panic(fmt.Sprintf("Listen error: %s", err))
 	}
-	defer listener.Close()
+	defer func() {
+		err := listener.Close()
+		if err != nil {
+			stderr.Println("Could not close socket file")
+		}
+
+		err = os.Remove(sockPath)
+		if err != nil {
+			stderr.Println("Could not remove socket file")
+		}
+	}()
 
 	identities, err := ReadConfig(*configPath)
 	if err != nil {

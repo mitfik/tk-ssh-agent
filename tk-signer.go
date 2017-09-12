@@ -4,15 +4,11 @@ import (
 	"crypto/sha256"
 	"encoding/asn1"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"io"
-	"io/ioutil"
 	"math/big"
-	"net/http"
-	"net/url"
 )
 
 type trustedKeySigner struct {
@@ -46,30 +42,42 @@ func (s *trustedKeySigner) Sign(rand io.Reader, data []byte) (*ssh.Signature, er
 	b := sha256.Sum256(data)
 	encodedData := encodeData(b[:])
 
+	// Send signature request
+	resp, err := HTTPGet(s.identity, "/sshlogin", map[string]string{
+		"nonce":          string(encodedData),
+		"subjectaddress": s.identity.addr,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	callbackURL := resp["callbackUrl"]
+	if callbackURL == nil {
+		return nil, errors.New("Missing callback url from server response")
+	}
+	loginRequestID := resp["loginRequestId"]
+	if loginRequestID == nil {
+		return nil, errors.New("Missing loginRequestId url from server response")
+	}
+
 	// TODO: Use https://github.com/0xAX/notificator (or other libnotify thingy) for displaying OTP
 	// TODO: Get callback URL from /sshlogin call and use that for OTP
-	otp := OneTimePassword(encodedData, encodedData)
+	otp := OneTimePassword(encodedData, []byte(callbackURL.(string)))
 	fmt.Println(fmt.Sprintf("Verify this OTP on your device: %s (TODO: UI integration)", otp))
 
-	// TODO: Authenticated HTTP call
-	// TODO: Different flow, needs callback url
-	resp, err := http.Get("http://localhost:3001/sshlogin?nonce=" + url.QueryEscape(string(encodedData)) + "&expiry=31337&subjectaddress=" + s.identity.addr)
+	resp, err = HTTPGet(s.identity, "/sshloginPart2", map[string]string{
+		"loginRequestId": loginRequestID.(string),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	signatureResp := resp["signature"]
+	if signatureResp == nil {
+		return nil, errors.New("Missing signature from server response")
 	}
 
-	var dat map[string]interface{}
-	if err := json.Unmarshal(body, &dat); err != nil {
-		return nil, err
-	}
-
-	sig, err := base64.StdEncoding.DecodeString(dat["data"].(string))
+	sig, err := base64.StdEncoding.DecodeString(signatureResp.(string))
 	if err != nil {
 		return nil, err
 	}

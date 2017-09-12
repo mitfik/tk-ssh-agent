@@ -1,6 +1,6 @@
 {
     "049231c1ba77dc29ec62188ae766c8455f7efb98b1ec7711d6f3333c2d8938970c301f79fab770c570014c3aaa2ec2b40fcfb03520fc503a6f6ed44f8da7e93770": {
-        "rpURL": "http://localhost:3001/",
+        "rpURL": "http://localhost:3001",
         "clientId": "blah",
         "clientSecret": "blah"
     }
