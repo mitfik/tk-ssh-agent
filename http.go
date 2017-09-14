@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -20,6 +22,7 @@ func getHmacJWS(url string, identity TKIdentity) ([]byte, error) {
 	header, err := json.Marshal(map[string]string{
 		"alg": "HS256",
 		"typ": "JWT",
+		"iss": identity.clientID,
 	})
 	if err != nil {
 		return nil, err
@@ -82,6 +85,11 @@ func HTTPGet(identity TKIdentity, requestPath string, params map[string]string) 
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		err = errors.New(fmt.Sprintf("RP returned status code %d", resp.StatusCode))
 		return nil, err
 	}
 
