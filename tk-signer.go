@@ -9,6 +9,8 @@ import (
 	"golang.org/x/crypto/ssh"
 	"io"
 	"math/big"
+	"os/exec"
+	"runtime"
 )
 
 type trustedKeySigner struct {
@@ -18,6 +20,29 @@ type trustedKeySigner struct {
 
 type asn1signature struct {
 	R, S *big.Int
+}
+
+func notify(otp string) {
+	appID := "Trusted Key SSH Agent"
+	msg := "Verify this OTP on your device"
+
+	printNotification := func() {
+		fmt.Println(fmt.Sprintf("%s: %s", msg, otp))
+	}
+
+	switch runtime.GOOS {
+	case "darwin":
+		osascript := fmt.Sprintf("display notification \"%s\" with title \"%s\" subtitle \"%s\"", otp, appID, msg)
+		exec.Command("osascript", "-e", osascript).Run()
+	case "linux":
+		body := fmt.Sprintf("%s: %s", msg, otp)
+		err := exec.Command("notify-send", appID, body).Run()
+		if err != nil {
+			printNotification()
+		}
+	default:
+		printNotification()
+	}
 }
 
 // Encode data with base64(data)
@@ -60,10 +85,8 @@ func (s *trustedKeySigner) Sign(rand io.Reader, data []byte) (*ssh.Signature, er
 		return nil, errors.New("Missing loginRequestId url from server response")
 	}
 
-	// TODO: Use https://github.com/0xAX/notificator (or other libnotify thingy) for displaying OTP
-	// TODO: Get callback URL from /sshlogin call and use that for OTP
 	otp := OneTimePassword(encodedData, []byte(callbackURL.(string)))
-	fmt.Println(fmt.Sprintf("Verify this OTP on your device: %s (TODO: UI integration)", otp))
+	notify(otp)
 
 	resp, err = HTTPGet(s.identity, "/sshloginPart2", map[string]string{
 		"loginRequestId": loginRequestID.(string),

@@ -2,10 +2,14 @@ LDFLAGS="-w -s"
 
 all: build
 
+install:
+	install -m 0755 tk-ssh-agent /usr/local/bin/tk-ssh-agent
+
+install-deps:
+	env GOPATH=`pwd`/go go get -d ./...
+
 build:
-	go build -ldflags $(LDFLAGS)
-	# upx --brute ./tk-ssh-agent
+	env GOPATH=`pwd`/go go build -ldflags $(LDFLAGS)
 
 clean:
-	rm -f /tmp/tk-ssh-auth.sock
 	rm -f tk-ssh-agent
