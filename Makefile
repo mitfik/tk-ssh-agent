@@ -9,7 +9,7 @@ install-deps:
 	env GOPATH=`pwd`/go go get -d ./...
 
 build:
-	env GOPATH=`pwd`/go go build -ldflags $(LDFLAGS)
+	env CGO_ENABLED=0 GOPATH=`pwd`/go go build -ldflags $(LDFLAGS)
 
 clean:
 	rm -f tk-ssh-agent
