@@ -38,6 +38,12 @@ func main() {
 		}
 	}
 
+	identities, err := ReadConfig(*configPath)
+	if err != nil {
+		stderr.Println(fmt.Sprintf("Missing configuration in '%s'", *configPath))
+		os.Exit(1)
+	}
+
 	listener, err := net.Listen("unix", *sockPath)
 	if err != nil {
 		panic(fmt.Sprintf("Listen error: %s", err))
@@ -60,12 +66,6 @@ func main() {
 		}
 	}()
 	defer cleanup()
-
-	identities, err := ReadConfig(*configPath)
-	if err != nil {
-		stderr.Println(fmt.Sprintf("Missing configuration in '%s'", *configPath))
-		os.Exit(1)
-	}
 
 	keyring := NewTKeyring(identities)
 	if err != nil {
