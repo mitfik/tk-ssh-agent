@@ -3,16 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
-	"os/user"
-	"path"
 )
 
 func readConfig(configPath string) map[string]interface{} {
@@ -63,7 +58,7 @@ func submitLogin(walletURL string, username string, queryParams string) (map[str
 
 	q := walletSubmitURL.Query()
 	q.Set("query", queryParams)
-	q.Set("username", "adisbladis@gmail.com")
+	q.Set("username", username)
 	walletSubmitURL.RawQuery = q.Encode()
 
 	resp, err := http.Get(walletSubmitURL.String())
@@ -203,6 +198,7 @@ func login(username string, rpURL string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	defer logout(rpURL, client)
 
 	credentials, err := getCredentialConfig(rpURL, client)
 	if err != nil {
@@ -212,35 +208,28 @@ func login(username string, rpURL string) (map[string]interface{}, error) {
 	return credentials, nil
 }
 
-func main() {
-	stderr := log.New(os.Stderr, "", 0)
-
-	usr, err := user.Current()
+func logout(rpURL string, client *http.Client) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/logout", rpURL), nil)
 	if err != nil {
-		panic(err)
+		return
 	}
 
-	configPath := flag.String("config",
-		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
-		"/path/to/conf.json")
-	rpURLFlag := flag.String("rpURL",
-		"https://ssh.trustedkey.com",
-		"Relying party URL")
-	flag.Parse()
-
-	if flag.NArg() == 0 {
-		stderr.Println(fmt.Sprintf("Usage: %s <email>", os.Args[0]))
-		os.Exit(1)
+	resp, err := client.Do(req)
+	if err != nil {
+		return
 	}
+	defer resp.Body.Close()
+}
 
-	username := flag.Arg(0)
+// EnrollMain - Run enroll main loop
+func EnrollMain(username string, rpURLFlag string, configPath string) {
 	// Normalise relying party URL
-	rpURL, err := url.ParseRequestURI(*rpURLFlag)
+	rpURL, err := url.ParseRequestURI(rpURLFlag)
 	if err != nil {
 		panic(err)
 	}
 
-	config := readConfig(*configPath)
+	config := readConfig(configPath)
 
 	credentials, err := login(username, fmt.Sprintf("%s://%s", rpURL.Scheme, rpURL.Host))
 	if err != nil {
@@ -256,10 +245,10 @@ func main() {
 		panic(err)
 	}
 
-	err = ioutil.WriteFile(*configPath, outputJSON, 0600)
+	err = ioutil.WriteFile(configPath, outputJSON, 0600)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Credential added")
+	fmt.Println("Credential enrolled")
 }

@@ -3,87 +3,65 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golang.org/x/crypto/ssh/agent"
-	"io"
-	"log"
-	"net"
 	"os"
-	"os/signal"
 	"os/user"
 	"path"
 )
 
-func main() {
-	stderr := log.New(os.Stderr, "", 0)
+func printDefaults() {
+	fmt.Println(fmt.Sprintf("Usage: \"%s agent\" or \"%s enroll\"", os.Args[0], os.Args[0]))
+	flag.PrintDefaults()
+}
 
+func main() {
 	usr, err := user.Current()
 	if err != nil {
 		panic(err)
 	}
 
-	configPath := flag.String("config",
+	agentCommand := flag.NewFlagSet("agent", flag.ExitOnError)
+	agentOutputShell := agentCommand.String("shell", "bash", "(bash|fish)")
+	agentQuiet := agentCommand.Bool("quiet", false, "Dont output shell command for config")
+	agentSockPath := agentCommand.String("socket", "/tmp/tk-ssh-auth.sock", "Path to unix domain socket")
+	agentConfigPath := agentCommand.String("config",
 		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
 		"/path/to/conf.json")
-	outputShell := flag.String("shell", "bash", "(bash|fish)")
-	quiet := flag.Bool("quiet", false, "Dont output shell command for config")
-	sockPath := flag.String("socket", "/tmp/tk-ssh-auth.sock", "Path to unix domain socket")
-	flag.Parse()
 
-	if !*quiet {
-		switch {
-		case *outputShell == "bash":
-			fmt.Println(fmt.Sprintf("export SSH_AUTH_SOCK='%s'", *sockPath))
-		case *outputShell == "fish":
-			fmt.Println(fmt.Sprintf("setenv SSH_AUTH_SOCK '%s'", *sockPath))
-		}
+	enrollCommand := flag.NewFlagSet("enroll", flag.ExitOnError)
+	enrollConfigPath := enrollCommand.String("config",
+		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
+		"/path/to/conf.json")
+	enrollRpURLFlag := enrollCommand.String("rpURL",
+		"https://ssh.trustedkey.com",
+		"Relying party URL")
+	enrollEmail := enrollCommand.String("email",
+		"",
+		"Email address (required)")
+
+	if len(os.Args) <= 1 {
+		printDefaults()
+		os.Exit(1)
 	}
-
-	identities, err := ReadConfig(*configPath)
-	if err != nil {
-		stderr.Println(fmt.Sprintf("Missing configuration in '%s'", *configPath))
+	switch os.Args[1] {
+	case "enroll":
+		enrollCommand.Parse(os.Args[2:])
+	case "agent":
+		agentCommand.Parse(os.Args[2:])
+	default:
+		printDefaults()
 		os.Exit(1)
 	}
 
-	listener, err := net.Listen("unix", *sockPath)
-	if err != nil {
-		panic(fmt.Sprintf("Listen error: %s", err))
+	if agentCommand.Parsed() {
+		AgentMain(*agentQuiet, *agentOutputShell, *agentConfigPath, *agentSockPath)
 	}
 
-	cleanup := func() {
-		err := listener.Close()
-		if err != nil {
-			stderr.Println("Could not close socket file")
-		}
-	}
-
-	// Do cleanup regardless of how we exited
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for _ = range c {
-			cleanup()
-			os.Exit(0)
-		}
-	}()
-	defer cleanup()
-
-	keyring := NewTKeyring(identities)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	for {
-		c, err := listener.Accept()
-		if err != nil {
-			stderr.Print(err)
-			continue
+	if enrollCommand.Parsed() {
+		if *enrollEmail == "" {
+			enrollCommand.PrintDefaults()
+			os.Exit(1)
 		}
 
-		go func() {
-			err := agent.ServeAgent(keyring, c)
-			if err != nil && err != io.EOF {
-				stderr.Print(err)
-			}
-		}()
+		EnrollMain(*enrollEmail, *enrollRpURLFlag, *enrollConfigPath)
 	}
 }

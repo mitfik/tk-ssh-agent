@@ -9,7 +9,6 @@ install:
 
 build:
 	env CGO_ENABLED=0 GOPATH=$(GOPATH) go build -asmflags="-trimpath=$(BUILD_DIR)" -gcflags="-trimpath=$(BUILD_DIR)" -ldflags $(LDFLAGS)
-	$(MAKE) -C tk-ssh-agent-login
 
 clean:
 	rm -f tk-ssh-agent
