@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os/user"
+	"path"
 )
 
 func readConfig(configPath string) map[string]interface{} {
-	var data map[string]interface{}
+	data := make(map[string]interface{})
 
 	contents, err := ioutil.ReadFile(configPath)
 	if err != nil {
@@ -237,6 +240,37 @@ func EnrollMain(username string, rpURLFlag string, configPath string) {
 	}
 
 	for k, v := range credentials {
+		pubkeyBytes := []byte(k)
+
+		addr, err := UserPubKeyHexToAddress(pubkeyBytes)
+		if err != nil {
+			panic(err)
+		}
+
+		key, err := UserPubKeyHexToSSHPubKey(pubkeyBytes)
+		if err != nil {
+			panic(err)
+		}
+
+		pub := ssh.MarshalAuthorizedKey(key)
+		if err != nil {
+			panic(err)
+		}
+
+		usr, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+
+		authorizedKey := fmt.Sprintf("%s %s", string(pub[:len(pub)-1]), string(addr))
+		outFile := path.Join(usr.HomeDir, ".ssh", fmt.Sprintf("tk_%s.pub", string(addr)))
+		err = ioutil.WriteFile(outFile, []byte(authorizedKey), 0666)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Couldn't write public key file: %s", authorizedKey))
+		} else {
+			fmt.Println(fmt.Sprintf("You can now run \"ssh-copy-id -i %s user@host\" to copy your credential to a remote server", outFile))
+		}
+
 		config[k] = v
 	}
 
