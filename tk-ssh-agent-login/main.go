@@ -1,0 +1,265 @@
+package main
+
+import (
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
+	"os"
+	"os/user"
+	"path"
+)
+
+func readConfig(configPath string) map[string]interface{} {
+	var data map[string]interface{}
+
+	contents, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return data
+	}
+
+	if err := json.Unmarshal(contents, &data); err != nil {
+		panic(err)
+	}
+
+	return data
+}
+
+func getLoginQueryParams(rpURL string, client *http.Client) (string, string, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/login/trustedkey/", rpURL), nil)
+	if err != nil {
+		return "", "", err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return "", "", errors.New("Missing location header")
+	}
+
+	url, err := url.ParseRequestURI(location)
+	if err != nil {
+		return "", "", err
+	}
+
+	return fmt.Sprintf("%s://%s", url.Scheme, url.Host), url.RawQuery, nil
+}
+
+func submitLogin(walletURL string, username string, queryParams string) (map[string]string, error) {
+	walletSubmitURL, err := url.ParseRequestURI(fmt.Sprintf("%s/oauth/IDentify/submitLogin", walletURL))
+	if err != nil {
+		return nil, err
+	}
+
+	q := walletSubmitURL.Query()
+	q.Set("query", queryParams)
+	q.Set("username", "adisbladis@gmail.com")
+	walletSubmitURL.RawQuery = q.Encode()
+
+	resp, err := http.Get(walletSubmitURL.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Server returned HTTP status code %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var jsonData map[string]interface{}
+	if err := json.Unmarshal(body, &jsonData); err != nil {
+		return nil, err
+	}
+
+	ret := make(map[string]string)
+	data := jsonData["data"].(map[string]interface{})
+	ret["nonce"] = data["nonce"].(string)
+	ret["checksum"] = data["checksum"].(string)
+
+	return ret, nil
+}
+
+func waitLogin(walletURL string, nonce string) (string, error) {
+	waitURL, err := url.ParseRequestURI(fmt.Sprintf("%s/oauth/IDentify/waitLogin", walletURL))
+	if err != nil {
+		return "", err
+	}
+
+	q := waitURL.Query()
+	q.Set("nonce", nonce)
+	waitURL.RawQuery = q.Encode()
+
+	resp, err := http.Get(waitURL.String())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Timeout, retry
+	if resp.StatusCode == 408 {
+		return waitLogin(walletURL, nonce)
+	}
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("Server returned HTTP status code %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var jsonData map[string]interface{}
+	if err := json.Unmarshal(body, &jsonData); err != nil {
+		return "", err
+	}
+
+	data := jsonData["data"].(map[string]interface{})
+
+	return data["url"].(string), nil
+}
+
+func getCredentialConfig(rpURL string, client *http.Client) (map[string]interface{}, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/credential_add", rpURL), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Server returned HTTP status code %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func login(username string, rpURL string) (map[string]interface{}, error) {
+	cookiejar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Jar: cookiejar,
+	}
+
+	walletURL, queryParams, err := getLoginQueryParams(rpURL, client)
+	if err != nil {
+		return nil, err
+	}
+
+	loginData, err := submitLogin(walletURL, username, queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(fmt.Sprintf("Verify this OTP on your device: %s", loginData["checksum"]))
+
+	loginURL, err := waitLogin(walletURL, loginData["nonce"])
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", loginURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	credentials, err := getCredentialConfig(rpURL, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return credentials, nil
+}
+
+func main() {
+	stderr := log.New(os.Stderr, "", 0)
+
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
+	configPath := flag.String("config",
+		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
+		"/path/to/conf.json")
+	rpURLFlag := flag.String("rpURL",
+		"https://ssh.trustedkey.com",
+		"Relying party URL")
+	flag.Parse()
+
+	if flag.NArg() == 0 {
+		stderr.Println(fmt.Sprintf("Usage: %s <email>", os.Args[0]))
+		os.Exit(1)
+	}
+
+	username := flag.Arg(0)
+	// Normalise relying party URL
+	rpURL, err := url.ParseRequestURI(*rpURLFlag)
+	if err != nil {
+		panic(err)
+	}
+
+	config := readConfig(*configPath)
+
+	credentials, err := login(username, fmt.Sprintf("%s://%s", rpURL.Scheme, rpURL.Host))
+	if err != nil {
+		panic(err)
+	}
+
+	for k, v := range credentials {
+		config[k] = v
+	}
+
+	outputJSON, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(*configPath, outputJSON, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Credential added")
+}

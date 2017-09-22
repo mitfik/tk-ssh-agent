@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -89,7 +88,7 @@ func HTTPGet(identity TKIdentity, requestPath string, params map[string]string) 
 	}
 
 	if resp.StatusCode != 200 {
-		err = errors.New(fmt.Sprintf("RP returned status code %d", resp.StatusCode))
+		err = fmt.Errorf("RP returned status code %d", resp.StatusCode)
 		return nil, err
 	}
 

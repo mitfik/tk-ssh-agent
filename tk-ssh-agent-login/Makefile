@@ -1,15 +1,11 @@
 LDFLAGS="-w -s"
 BUILD_DIR=`pwd`
-GOPATH=`pwd`/vendor
+GOPATH=/home/adisbladis/sauce/verifiedid/tk-ssh-agent/vendor
 
 all: build
 
-install:
-	install -m 0755 tk-ssh-agent /usr/local/bin/tk-ssh-agent
-
 build:
 	env CGO_ENABLED=0 GOPATH=$(GOPATH) go build -asmflags="-trimpath=$(BUILD_DIR)" -gcflags="-trimpath=$(BUILD_DIR)" -ldflags $(LDFLAGS)
-	$(MAKE) -C tk-ssh-agent-login
 
 clean:
 	rm -f tk-ssh-agent
