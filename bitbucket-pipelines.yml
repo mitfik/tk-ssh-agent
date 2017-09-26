@@ -8,6 +8,7 @@ pipelines:
         caches:
           - go
         script:
+          - git submodule update --init
           - export GOPATH=`pwd`/go
           - export CGO_ENABLED=0
           - go get -d ./...
