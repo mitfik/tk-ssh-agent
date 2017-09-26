@@ -1,4 +1,4 @@
-with import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixos/unstable-small/nixos-17.09pre113137.1eb48d3b08/nixexprs.tar.xz") {};
+with import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixpkgs/nixpkgs-18.03pre116369.14cbeaa892/nixexprs.tar.xz") {};
 
 stdenv.mkDerivation rec {
   name = "tk-ssh-agent-env";
