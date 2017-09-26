@@ -13,8 +13,11 @@ pipelines:
           - go get -d ./...
           - mkdir -p out
 
-          - env GOOS=linux GOARCH=amd64 go build -o ./out/tk-ssh-agent-x86_64-linux -ldflags "-w -s"
-          - env GOOS=darwin GOARCH=amd64 go build -o ./out/tk-ssh-agent-x86_64-darwin -ldflags "-w -s"
+          - env GOOS=linux GOARCH=amd64 make
+          - mv tk-ssh-agent out/tk-ssh-agent-x86_64-linux
+
+          - env GOOS=darwin GOARCH=amd64 make
+          - mv tk-ssh-agent out/tk-ssh-agent-x86_64-darwin
 
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./out/tk-ssh-agent-x86_64-linux"
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./out/tk-ssh-agent-x86_64-darwin"
