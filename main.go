@@ -8,11 +8,6 @@ import (
 	"path"
 )
 
-func printDefaults() {
-	fmt.Println(fmt.Sprintf("Usage: \"%s agent\" or \"%s enroll\"", os.Args[0], os.Args[0]))
-	flag.PrintDefaults()
-}
-
 func main() {
 	usr, err := user.Current()
 	if err != nil {
@@ -37,6 +32,18 @@ func main() {
 	enrollEmail := enrollCommand.String("email",
 		"",
 		"Email address (required)")
+
+	printDefaults := func() {
+		fmt.Println(fmt.Sprintf("Usage: \"%s agent\" or \"%s enroll\"", os.Args[0], os.Args[0]))
+
+		fmt.Println("\nUsage of enroll:")
+		enrollCommand.PrintDefaults()
+
+		fmt.Println("\nUsage of agent:")
+		agentCommand.PrintDefaults()
+
+		flag.PrintDefaults()
+	}
 
 	if len(os.Args) <= 1 {
 		printDefaults()
