@@ -268,7 +268,7 @@ func EnrollMain(username string, rpURLFlag string, configPath string) {
 		if err != nil {
 			fmt.Println(fmt.Sprintf("Couldn't write public key file: %s", authorizedKey))
 		} else {
-			fmt.Println(fmt.Sprintf("You can now run \"ssh-copy-id -i %s user@host\" to copy your credential to a remote server", outFile))
+			fmt.Println(fmt.Sprintf("You can now run \"ssh-copy-id -f -i %s user@host\" to copy your credential to a remote server", outFile))
 		}
 
 		config[k] = v
