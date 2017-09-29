@@ -9,6 +9,7 @@ stdenv.mkDerivation rec {
     upx
     gocode
     golint
+  ] ++ (if stdenv.isLinux then [
     libnotify
-  ];
+  ] else []);
 }

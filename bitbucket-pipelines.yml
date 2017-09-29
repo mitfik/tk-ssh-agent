@@ -5,13 +5,10 @@ pipelines:
     - step:
         image:
           name: golang:latest
-        caches:
-          - go
         script:
           - git submodule update --init
           - export GOPATH=`pwd`/go
           - export CGO_ENABLED=0
-          - go get -d ./...
           - mkdir -p out
 
           - env GOOS=linux GOARCH=amd64 make
@@ -20,9 +17,12 @@ pipelines:
           - env GOOS=darwin GOARCH=amd64 make
           - mv tk-ssh-agent out/tk-ssh-agent-x86_64-darwin
 
+          - apt-get update
+          - apt-get install -y checkinstall upx
+          - make deb
+
+          - export DEBFILE=`ls | grep -P '\.deb$' | head -n 1`
+
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./out/tk-ssh-agent-x86_64-linux"
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./out/tk-ssh-agent-x86_64-darwin"
-
-definitions:
-  caches:
-    go: go
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./${DEBFILE}"
