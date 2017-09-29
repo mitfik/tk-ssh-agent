@@ -11,7 +11,7 @@ import (
 )
 
 // AgentMain - run agent main loop
-func AgentMain(quiet bool, outputShell string, configPath string, sockPath string) {
+func AgentMain(quiet bool, outputShell string, configPath string, sockPath string, backendAgent string) {
 	stderr := log.New(os.Stderr, "", 0)
 
 	if !quiet {
@@ -52,9 +52,14 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 	}()
 	defer cleanup()
 
-	keyring := NewTKeyring(identities)
-	if err != nil {
-		log.Panic(err)
+	var keyring agent.Agent
+	if backendAgent != "" {
+		keyring, err = NewProxyAgent(identities, backendAgent)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		keyring = NewTKeyring(identities)
 	}
 
 	for {

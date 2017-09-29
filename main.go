@@ -17,6 +17,7 @@ func main() {
 	agentCommand := flag.NewFlagSet("agent", flag.ExitOnError)
 	agentOutputShell := agentCommand.String("shell", "bash", "(bash|fish)")
 	agentQuiet := agentCommand.Bool("quiet", false, "Dont output shell command for config")
+	agentBackend := agentCommand.String("proxy", "", "Proxy unknown identities to agent unix domain socket")
 	agentSockPath := agentCommand.String("socket", "/tmp/tk-ssh-auth.sock", "Path to unix domain socket")
 	agentConfigPath := agentCommand.String("config",
 		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
@@ -60,7 +61,7 @@ func main() {
 	}
 
 	if agentCommand.Parsed() {
-		AgentMain(*agentQuiet, *agentOutputShell, *agentConfigPath, *agentSockPath)
+		AgentMain(*agentQuiet, *agentOutputShell, *agentConfigPath, *agentSockPath, *agentBackend)
 	}
 
 	if enrollCommand.Parsed() {

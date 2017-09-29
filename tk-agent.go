@@ -24,6 +24,8 @@ type keyring struct {
 	passphrase []byte
 }
 
+// ErrSignerNotFound - Returned from Sign when no matching identity was found
+var ErrSignerNotFound = errors.New("signer for public key not found")
 var errLocked = errors.New("agent: locked")
 
 // NewTKeyring returns an Agent that holds keys in the Trusted Key app.
@@ -84,7 +86,7 @@ func (r *keyring) Sign(key ssh.PublicKey, data []byte) (*ssh.Signature, error) {
 	// Unlock before we actually call sign to prevent deadlocks
 	r.mutex.Unlock()
 	if signer == nil {
-		return nil, errors.New("signer for public key not found")
+		return nil, ErrSignerNotFound
 	}
 
 	return signer.Sign(rand.Reader, data)

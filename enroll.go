@@ -145,7 +145,7 @@ func getCredentialConfig(rpURL string, client *http.Client) (map[string]interfac
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Server returned HTTP status code %d", resp.StatusCode)
+		return nil, fmt.Errorf("Server returned HTTP status code %d (login not successful)", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
