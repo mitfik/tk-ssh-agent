@@ -20,9 +20,5 @@ pipelines:
           - make compress
           - mv tk-ssh-agent out/tk-ssh-agent-x86_64-darwin
 
-          - make deb
-          - export DEBFILE=`ls | grep -P '\.deb$' | head -n 1`
-
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./out/tk-ssh-agent-x86_64-linux"
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./out/tk-ssh-agent-x86_64-darwin"
-          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/trustedkey/tk-ssh-agent/downloads" --form files=@"./${DEBFILE}"

@@ -11,5 +11,9 @@ stdenv.mkDerivation rec {
     golint
   ] ++ (if stdenv.isLinux then [
     libnotify
+    # Packaging tools
+    python3
+    fpm
+    rpm
   ] else []);
 }

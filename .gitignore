@@ -1,2 +1,4 @@
-/go
+/pkg
 /tk-ssh-agent
+*.deb
+*.rpm
