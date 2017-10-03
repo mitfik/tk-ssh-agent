@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 // AgentMain - run agent main loop
@@ -44,6 +45,7 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 	// Do cleanup regardless of how we exited
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
 	go func() {
 		for _ = range c {
 			cleanup()
