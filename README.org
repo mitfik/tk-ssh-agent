@@ -1,0 +1,37 @@
+* Trusted Key SSH Agent
+SSH Agent utilizing the [[https://trustedkey.com/][Trusted Key app]]
+
+** Installation
+*** Debian/Ubuntu
+Add the following to your sources.list (or sources.list.d)
+#+begin_src
+deb [arch=amd64] https://deb.trustedkey.com/ /
+#+end_src
+
+#+begin_src bash
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FA75289B489AE1A51BCA18ABED58F95069B004F5
+apt-get update
+apt-get install tk-ssh-agent
+#+end_src
+
+*** Redhat/Fedora
+Add the following to /etc/yum.repos.d/trustedkey.repo
+#+begin_src ini
+[trustedkey]
+name=Trusted Key repository
+baseurl=https://rpm.trustedkey.com/
+enabled=1
+gpgcheck=1
+gpgkey=https://pgp.mit.edu/pks/lookup?op=get&options=mr&search=0xED58F95069B004F5
+#+end_src
+
+*** Mac OSX
+Use the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key homebrew tap]]
+
+** Usage
+#+begin_src bash
+tk-ssh-agent enroll --email <youremail@example.com>
+tk-ssh-agent agent  # Runs the agent, will block your terminal
+#+end_src
+
+For more idiomatic easy everyday use install and use the [[https://github.com/trustedkey/tk-ssh-agent/tree/master/systemd/][systemd]] or the [[https://github.com/trustedkey/homebrew-trustedkey][OSX launchd service]]
