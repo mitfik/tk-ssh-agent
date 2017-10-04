@@ -13,21 +13,6 @@ import (
 	"path"
 )
 
-func readConfig(configPath string) map[string]interface{} {
-	data := make(map[string]interface{})
-
-	contents, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return data
-	}
-
-	if err := json.Unmarshal(contents, &data); err != nil {
-		panic(err)
-	}
-
-	return data
-}
-
 func getLoginQueryParams(rpURL string, client *http.Client) (string, string, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/login/trustedkey/", rpURL), nil)
 	if err != nil {
@@ -232,7 +217,7 @@ func EnrollMain(username string, rpURLFlag string, configPath string) {
 		panic(err)
 	}
 
-	config := readConfig(configPath)
+	config := ReadConfigRaw(configPath)
 
 	credentials, err := login(username, fmt.Sprintf("%s://%s", rpURL.Scheme, rpURL.Host))
 	if err != nil {
@@ -274,12 +259,7 @@ func EnrollMain(username string, rpURLFlag string, configPath string) {
 		config[k] = v
 	}
 
-	outputJSON, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-
-	err = ioutil.WriteFile(configPath, outputJSON, 0600)
+	err = WriteConfigRaw(configPath, config)
 	if err != nil {
 		panic(err)
 	}

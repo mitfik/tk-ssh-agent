@@ -20,20 +20,65 @@ func fieldError(field string) error {
 	return errors.New(field + "does not exist in identity")
 }
 
-// ReadConfig ...
-func ReadConfig(path string) ([]TKIdentity, error) {
-	contents, err := ioutil.ReadFile(path)
+func hasKey(configData map[string]interface{}, key string) bool {
+	val, ok := configData[key]
+	return ok && val != nil
+}
+
+// ReadConfigRaw ...
+func ReadConfigRaw(configPath string) map[string]interface{} {
+	data := make(map[string]interface{})
+
+	contents, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return nil, err
+		return data
 	}
 
-	var data map[string]interface{}
 	if err := json.Unmarshal(contents, &data); err != nil {
-		return nil, err
+		panic(err)
 	}
+
+	return data
+}
+
+// ReadConfigExtra ...
+func ReadConfigExtra(configPath string) map[string]interface{} {
+	jsonData := ReadConfigRaw(configPath)
+	var configData map[string]interface{}
+	if hasKey(jsonData, "config") {
+		configData = jsonData["config"].(map[string]interface{})
+	} else {
+		configData = make(map[string]interface{})
+	}
+	return configData
+}
+
+// WriteConfigRaw ...
+func WriteConfigRaw(configPath string, config map[string]interface{}) error {
+	outputJSON, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(configPath, outputJSON, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ReadConfig ...
+func ReadConfig(path string) ([]TKIdentity, error) {
+	data := ReadConfigRaw(path)
 
 	var tkIdentities []TKIdentity
 	for key, values := range data {
+
+		if key == "config" {
+			continue
+		}
+
 		v := values.(map[string]interface{})
 		rpURL := v["rpURL"]
 		if rpURL == nil {
