@@ -27,11 +27,26 @@ gpgcheck=1
 gpgkey=https://pgp.mit.edu/pks/lookup?op=get&options=mr&search=0xED58F95069B004F5
 #+end_src
 
+#+begin_src bash
+yum install tk-ssh-agent
+#+end_src
+
 *** NixOS
 Use the [[https://github.com/trustedkey/nixpkgs-trustedkey][Trusted key nixpkgs overlay]]
 
 *** Mac OSX
 Use the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key homebrew tap]]
+
+*** From source
+**** Install [[https://golang.org/dl/][Golang]]
+This is operating systems dependent, use a package manager like apt-get or brew.
+Golang 1.7 or newer is required.
+
+**** Compile
+#+begin_src bash
+make
+make install
+#+end_src
 
 ** Usage
 #+begin_src bash
