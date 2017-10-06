@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -19,6 +21,27 @@ func hasArg(args []string, argument string) bool {
 	return false
 }
 
+func defaultSockPath() string {
+	defaultPath := "/tmp/tk-ssh-auth.sock"
+	sockName := "tk-ssh-auth.sock"
+
+	switch runtime.GOOS {
+	case "darwin":
+		return filepath.Join(os.Getenv("TMPDIR"), sockName)
+
+	case "linux":
+		// Not everyone actually follows XDG spec
+		xdgDir := os.Getenv("XDG_RUNTIME_DIR")
+		if xdgDir == "" {
+			return defaultPath
+		}
+		return filepath.Join(xdgDir, sockName)
+
+	default:
+		return defaultPath
+	}
+}
+
 func main() {
 	usr, err := user.Current()
 	if err != nil {
@@ -29,7 +52,7 @@ func main() {
 	agentOutputShell := agentCommand.String("shell", "bash", "(bash|fish)")
 	agentQuiet := agentCommand.Bool("quiet", false, "Dont output shell command for config")
 	agentBackend := agentCommand.String("proxy", "", "Proxy unknown identities to agent unix domain socket")
-	agentSockPath := agentCommand.String("socket", "/tmp/tk-ssh-auth.sock", "Path to unix domain socket")
+	agentSockPath := agentCommand.String("socket", defaultSockPath(), "Path to unix domain socket")
 	agentConfigPath := agentCommand.String("config",
 		path.Join(usr.HomeDir, ".config", "tk-ssh.json"),
 		"/path/to/conf.json")
