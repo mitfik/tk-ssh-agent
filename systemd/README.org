@@ -1,0 +1,26 @@
+* Trusted Key SSH agent systemd setup
+
+** Add the following to ~/.config/systemd/tk-ssh-agent.service
+#+begin_src ini
+[Unit]
+Description=Trusted Key SSH Agent
+
+[Service]
+ExecStart=/usr/bin/tk-ssh-agent agent
+PassEnvironment=DISPLAY
+Restart=on-failure
+RestartSec=3
+SuccessExitStatus=0 2
+Type=simple
+#+end_src
+PassEnvironment is required to get graphical notifications with OTP code
+
+** Start the unit
+#+begin_src bash
+systemctl --user start tk-ssh-agent
+#+end_src
+
+** Enable the unit at startup
+#+begin_src bash
+systemctl --user enable tk-ssh-agent
+#+end_src
