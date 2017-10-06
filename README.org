@@ -1,4 +1,6 @@
 * Trusted Key SSH Agent
+[[https://travis-ci.org/trustedkey/tk-ssh-agent][https://travis-ci.org/trustedkey/tk-ssh-agent.svg?branch=master]]
+
 SSH Agent utilizing the [[https://trustedkey.com/][Trusted Key app]]
 
 ** Installation
