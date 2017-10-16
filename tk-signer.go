@@ -23,12 +23,9 @@ import (
 	"encoding/asn1"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"math/big"
-	"os/exec"
-	"runtime"
 )
 
 type trustedKeySigner struct {
@@ -38,29 +35,6 @@ type trustedKeySigner struct {
 
 type asn1signature struct {
 	R, S *big.Int
-}
-
-func notify(otp string) {
-	appID := "Trusted Key SSH Agent"
-	msg := "Verify SSH Login request on your Trusted Key App."
-
-	printNotification := func() {
-		fmt.Println(fmt.Sprintf("%s: %s", msg, otp))
-	}
-
-	switch runtime.GOOS {
-	case "darwin":
-		osascript := fmt.Sprintf("display notification \"%s\" with title \"%s\" subtitle \"%s\"", otp, appID, msg)
-		exec.Command("osascript", "-e", osascript).Run()
-	case "linux":
-		body := fmt.Sprintf("%s Code: %s", msg, otp)
-		err := exec.Command("notify-send", appID, body).Run()
-		if err != nil {
-			printNotification()
-		}
-	default:
-		printNotification()
-	}
 }
 
 // Encode data with base64(data)
@@ -104,7 +78,7 @@ func (s *trustedKeySigner) Sign(rand io.Reader, data []byte) (*ssh.Signature, er
 	}
 
 	otp := OneTimePassword(encodedData, []byte(callbackURL.(string)))
-	notify(otp)
+	Notify(otp)
 
 	resp, err = HTTPGet(s.identity, "/sshloginPart2", map[string]string{
 		"loginRequestId": loginRequestID.(string),
