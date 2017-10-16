@@ -43,7 +43,7 @@ This is operating systems dependent, use a package manager like apt-get or brew.
 Golang 1.7 or newer is required.
 
 **** Compile
-Make sure you've cloned the repo with `--recursive` or `git submodule update`.
+Make sure you've cloned the repo with ~--recursive~ or ~git submodule update~.
 #+begin_src bash
 make
 make install
