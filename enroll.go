@@ -188,7 +188,7 @@ func login(username string, rpURL string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Println(fmt.Sprintf("Verify this OTP on your device: %s", loginData["checksum"]))
+	fmt.Println(fmt.Sprintf("Verify SSH Login request on your Trusted Key App. Code: %s", loginData["checksum"]))
 
 	loginURL, err := waitLogin(walletURL, loginData["nonce"])
 	if err != nil {

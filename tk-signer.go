@@ -42,7 +42,7 @@ type asn1signature struct {
 
 func notify(otp string) {
 	appID := "Trusted Key SSH Agent"
-	msg := "Verify this OTP on your device"
+	msg := "Verify SSH Login request on your Trusted Key App."
 
 	printNotification := func() {
 		fmt.Println(fmt.Sprintf("%s: %s", msg, otp))
@@ -53,7 +53,7 @@ func notify(otp string) {
 		osascript := fmt.Sprintf("display notification \"%s\" with title \"%s\" subtitle \"%s\"", otp, appID, msg)
 		exec.Command("osascript", "-e", osascript).Run()
 	case "linux":
-		body := fmt.Sprintf("%s: %s", msg, otp)
+		body := fmt.Sprintf("%s Code: %s", msg, otp)
 		err := exec.Command("notify-send", appID, body).Run()
 		if err != nil {
 			printNotification()
