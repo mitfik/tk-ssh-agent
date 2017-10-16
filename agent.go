@@ -63,6 +63,7 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 	// Do cleanup regardless of how we exited
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGHUP)
 	signal.Notify(c, syscall.SIGTERM)
 	go func() {
 		for _ = range c {
