@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"os/user"
 	"path"
 )
@@ -247,8 +248,13 @@ func EnrollMain(username string, rpURLFlag string, configPath string) {
 			panic(err)
 		}
 
+		homeDirSSH := path.Join(usr.HomeDir, ".ssh")
+		if _, err := os.Stat(homeDirSSH); os.IsNotExist(err) {
+			os.Mkdir(homeDirSSH, 0700)
+		}
+
 		authorizedKey := fmt.Sprintf("%s %s", string(pub[:len(pub)-1]), string(addr))
-		outFile := path.Join(usr.HomeDir, ".ssh", fmt.Sprintf("tk_%s.pub", string(addr)))
+		outFile := path.Join(homeDirSSH, fmt.Sprintf("tk_%s.pub", string(addr)))
 		err = ioutil.WriteFile(outFile, []byte(authorizedKey), 0666)
 		if err != nil {
 			fmt.Println(fmt.Sprintf("Couldn't write public key file: %s", authorizedKey))
