@@ -69,6 +69,7 @@ func main() {
 	agentCommand := flag.NewFlagSet("agent", flag.ExitOnError)
 	agentOutputShell := agentCommand.String("shell", "bash", "(bash|fish)")
 	agentQuiet := agentCommand.Bool("quiet", false, "Dont output shell command for config")
+	agentSystemd := agentCommand.Bool("systemd", false, "Use systemd socket activation")
 	agentBackend := agentCommand.String("proxy", "", "Proxy unknown identities to agent unix domain socket")
 	agentSockPath := agentCommand.String("socket", defaultSockPath(), "Path to unix domain socket")
 	agentConfigPath := agentCommand.String("config",
@@ -137,7 +138,7 @@ func main() {
 			proxyBackend = *agentBackend
 		}
 
-		AgentMain(*agentQuiet, *agentOutputShell, *agentConfigPath, *agentSockPath, proxyBackend)
+		AgentMain(*agentQuiet, *agentOutputShell, *agentConfigPath, *agentSockPath, proxyBackend, *agentSystemd)
 	} else if enrollCommand.Parsed() {
 		if *enrollEmail == "" {
 			enrollCommand.PrintDefaults()

@@ -30,7 +30,7 @@ import (
 )
 
 // AgentMain - run agent main loop
-func AgentMain(quiet bool, outputShell string, configPath string, sockPath string, backendAgent string) {
+func AgentMain(quiet bool, outputShell string, configPath string, sockPath string, backendAgent string, systemd bool) {
 	stderr := log.New(os.Stderr, "", 0)
 
 	if !quiet {
@@ -48,16 +48,33 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 		os.Exit(1)
 	}
 
-	listener, err := net.Listen("unix", sockPath)
-	if err != nil {
-		panic(fmt.Sprintf("Listen error: %s", err))
+	var listeners []net.Listener
+
+	if systemd {
+		if os.Getenv("LISTEN_PID") == "" || os.Getenv("LISTEN_FDS") == "" {
+			panic("Missing required env vars")
+		}
+
+		listeners, err = ListenSystemdFds()
+		if err != nil {
+			panic(err)
+		}
+		
+	} else {	
+		listener, err := net.Listen("unix", sockPath)
+		if err != nil {
+			panic(fmt.Sprintf("Listen error: %s", err))
+		}
+		listeners = append(listeners, listener)
 	}
 
 	cleanup := func() {
-		err := listener.Close()
-		if err != nil {
-			stderr.Println("Could not close socket file")
-		}
+		for _, l := range listeners {
+			err := l.Close()
+			if err != nil {
+				stderr.Println("Could not close socket file")
+			}
+		}		
 	}
 
 	// Do cleanup regardless of how we exited
@@ -83,18 +100,35 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 		keyring = NewTKeyring(identities)
 	}
 
-	for {
-		c, err := listener.Accept()
-		if err != nil {
-			stderr.Print(err)
-			continue
-		}
+	agentConns := make(chan net.Conn)
 
-		go func() {
-			err := agent.ServeAgent(keyring, c)
-			if err != nil && err != io.EOF {
-				stderr.Print(err)
+	for _, listener := range listeners {
+		go func(l net.Listener) {
+			for {
+				c, err := l.Accept()
+				if err != nil {
+					stderr.Print(err)
+					// handle error (and then for example indicate acceptor is down)
+					agentConns <- nil
+					return
+				}
+				agentConns <- c
 			}
-		}()
+		}(listener)
 	}
+	
+	for {
+		select {
+		case c := <-agentConns:
+			if c != nil {
+				go func() {
+					err := agent.ServeAgent(keyring, c)
+					if err != nil && err != io.EOF {
+						stderr.Print(err)
+					}
+				}()
+			}
+		}
+	}
+
 }
