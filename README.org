@@ -37,6 +37,18 @@ Use the [[https://github.com/trustedkey/nixpkgs-trustedkey][Trusted key nixpkgs 
 *** Mac OSX
 Use the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key homebrew tap]]
 
+*** Windows/WSL
+SSH agents only work in the context of [[https://www.cygwin.com/][Cygwin]], [[https://git-for-windows.github.io/][Git for Windows]] or [[https://msdn.microsoft.com/commandline/wsl/about][WSL]].
+
+Put this in your ~~/.profile~
+#+begin_src bash
+if [ ! -f /tmp/tk-ssh-auth.sock ]; then
+  tk-ssh-agent --quiet &
+  export SSH_AUTH_SOCK="/tmp/tk-ssh-auth.sock"
+  ssh-add
+fi
+#+end_src
+
 *** From source
 **** Install [[https://golang.org/dl/][Golang]]
 This is operating systems dependent, use a package manager like apt-get or brew.
