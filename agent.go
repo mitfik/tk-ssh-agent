@@ -33,7 +33,7 @@ import (
 func AgentMain(quiet bool, outputShell string, configPath string, sockPath string, backendAgent string, systemd bool) {
 	stderr := log.New(os.Stderr, "", 0)
 
-	if !quiet {
+	if !quiet && !systemd {
 		switch {
 		case outputShell == "bash":
 			fmt.Println(fmt.Sprintf("export SSH_AUTH_SOCK='%s'", sockPath))
