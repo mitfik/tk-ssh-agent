@@ -66,29 +66,28 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 			panic(fmt.Sprintf("Listen error: %s", err))
 		}
 		listeners = append(listeners, listener)
-	}
 
-	cleanup := func() {
-		for _, l := range listeners {
-			err := l.Close()
+		cleanup := func() {
+			err := listener.Close()
 			if err != nil {
 				stderr.Println("Could not close socket file")
 			}
-		}		
-	}
-
-	// Do cleanup regardless of how we exited
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	signal.Notify(c, syscall.SIGHUP)
-	signal.Notify(c, syscall.SIGTERM)
-	go func() {
-		for _ = range c {
-			cleanup()
-			os.Exit(0)
 		}
-	}()
-	defer cleanup()
+
+		// Do cleanup regardless of how we exited
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGHUP)
+		signal.Notify(c, syscall.SIGTERM)
+		go func() {
+			for _ = range c {
+				cleanup()
+				os.Exit(0)
+			}
+		}()
+		defer cleanup()
+
+	}
 
 	var keyring agent.Agent
 	if backendAgent != "" {
