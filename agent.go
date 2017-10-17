@@ -34,11 +34,16 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 	stderr := log.New(os.Stderr, "", 0)
 
 	if !quiet && !systemd {
+		messageString := "Run this in the terminal where you want to use the agent"
+		configString := "or put it into %s"
+
 		switch {
 		case outputShell == "bash":
-			fmt.Println(fmt.Sprintf("export SSH_AUTH_SOCK='%s'", sockPath))
+			configString = fmt.Sprintf(configString, "~/.profile")
+			fmt.Println(fmt.Sprintf("%s (%s)\nexport SSH_AUTH_SOCK='%s'", messageString, configString, sockPath))
 		case outputShell == "fish":
-			fmt.Println(fmt.Sprintf("setenv SSH_AUTH_SOCK '%s'", sockPath))
+			configString = fmt.Sprintf(configString, "~/.config/fish/config.fish")
+			fmt.Println(fmt.Sprintf("%s (%s)\nset -gx SSH_AUTH_SOCK '%s'", messageString, configString, sockPath))
 		}
 	}
 

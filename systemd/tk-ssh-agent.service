@@ -1,0 +1,7 @@
+[Unit]
+Description=Trusted Key SSH Agent
+RefuseManualStart=true
+
+[Service]
+ExecStart=/usr/bin/tk-ssh-agent agent --systemd
+Type=simple
