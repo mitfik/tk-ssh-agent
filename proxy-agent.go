@@ -25,11 +25,12 @@ import (
 )
 
 type proxykeyring struct {
-	tkKeyRing        agent.Agent
-	backendAgentSock string
+	tkKeyRing    agent.Agent
+	backendAgent agent.Agent
 }
 
-func newBackendAgent(backend string) (agent.Agent, error) {
+// NewBackendAgent - Proxy unknown identities to other agent
+func NewBackendAgent(backend string) (agent.Agent, error) {
 	sock, err := net.Dial("unix", backend)
 	if err != nil {
 		return nil, err
@@ -41,12 +42,12 @@ func newBackendAgent(backend string) (agent.Agent, error) {
 
 // NewProxyAgent - Use TK signing for known TK identities and forward unknown
 // ones to another agent
-func NewProxyAgent(identities []TKIdentity, backend string) (agent.Agent, error) {
+func NewProxyAgent(identities []TKIdentity, backend agent.Agent) (agent.Agent, error) {
 	tkKeyRing := NewTKeyring(identities)
 
 	return &proxykeyring{
-		tkKeyRing:        tkKeyRing,
-		backendAgentSock: backend,
+		tkKeyRing:    tkKeyRing,
+		backendAgent: backend,
 	}, nil
 }
 
@@ -56,12 +57,7 @@ func (r *proxykeyring) List() ([]*agent.Key, error) {
 		return nil, err
 	}
 
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return nil, err
-	}
-
-	backendList, err := backendAgent.List()
+	backendList, err := r.backendAgent.List()
 	if err != nil {
 		return nil, err
 	}
@@ -86,12 +82,7 @@ func (r *proxykeyring) Sign(key ssh.PublicKey, data []byte) (*ssh.Signature, err
 		return nil, err
 	}
 
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return nil, err
-	}
-
-	signResult, err = backendAgent.Sign(key, data)
+	signResult, err = r.backendAgent.Sign(key, data)
 	if err != nil {
 		return nil, err
 	}
@@ -99,27 +90,15 @@ func (r *proxykeyring) Sign(key ssh.PublicKey, data []byte) (*ssh.Signature, err
 }
 
 func (r *proxykeyring) Add(key agent.AddedKey) error {
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return err
-	}
-	return backendAgent.Add(key)
+	return r.backendAgent.Add(key)
 }
 
 func (r *proxykeyring) Remove(key ssh.PublicKey) error {
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return err
-	}
-	return backendAgent.Remove(key)
+	return r.backendAgent.Remove(key)
 }
 
 func (r *proxykeyring) RemoveAll() error {
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return err
-	}
-	return backendAgent.RemoveAll()
+	return r.backendAgent.RemoveAll()
 }
 
 func (r *proxykeyring) Lock(passphrase []byte) error {
@@ -128,12 +107,7 @@ func (r *proxykeyring) Lock(passphrase []byte) error {
 		return err
 	}
 
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return err
-	}
-
-	err = backendAgent.Lock(passphrase)
+	err = r.backendAgent.Lock(passphrase)
 	if err != nil {
 		return err
 	}
@@ -147,12 +121,7 @@ func (r *proxykeyring) Unlock(passphrase []byte) error {
 		return err
 	}
 
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return err
-	}
-
-	err = backendAgent.Unlock(passphrase)
+	err = r.backendAgent.Unlock(passphrase)
 	if err != nil {
 		return err
 	}
@@ -166,12 +135,7 @@ func (r *proxykeyring) Signers() ([]ssh.Signer, error) {
 		return nil, err
 	}
 
-	backendAgent, err := newBackendAgent(r.backendAgentSock)
-	if err != nil {
-		return nil, err
-	}
-
-	backendSigners, err := backendAgent.Signers()
+	backendSigners, err := r.backendAgent.Signers()
 	if err != nil {
 		return nil, err
 	}

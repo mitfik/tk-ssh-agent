@@ -89,18 +89,24 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 
 	}
 
-	var keyring agent.Agent
+	// Proxy unknown identities to other agent
+	var agentBackend agent.Agent
 	if backendAgent != "" {
-		keyring, err = NewProxyAgent(identities, backendAgent)
-		if err != nil {
-			panic(err)
-		}
+		agentBackend, err = NewBackendAgent(backendAgent)
 	} else {
-		keyring = NewTKeyring(identities)
+		// Run in-memory keyring by default
+		agentBackend = agent.NewKeyring()
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	keyring, err := NewProxyAgent(identities, agentBackend)
+	if err != nil {
+		panic(err)
 	}
 
 	agentConns := make(chan net.Conn)
-
 	for _, listener := range listeners {
 		go func(l net.Listener) {
 			for {
