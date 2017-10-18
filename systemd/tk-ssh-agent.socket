@@ -5,3 +5,6 @@ Description=Trusted Key SSH Agent
 ListenStream=%t/tk-ssh-auth.sock
 Service=tk-ssh-agent.service
 SocketMode=0600
+
+[Install]
+WantedBy=sockets.target

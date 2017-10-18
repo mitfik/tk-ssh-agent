@@ -5,3 +5,6 @@ RefuseManualStart=true
 [Service]
 ExecStart=/usr/bin/tk-ssh-agent agent --systemd
 Type=simple
+
+[Install]
+WantedBy=default.target

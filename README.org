@@ -37,18 +37,6 @@ Use the [[https://github.com/trustedkey/nixpkgs-trustedkey][Trusted key nixpkgs 
 *** Mac OSX
 Use the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key homebrew tap]]
 
-*** Windows/WSL
-SSH agents only work in the context of [[https://www.cygwin.com/][Cygwin]], [[https://git-for-windows.github.io/][Git for Windows]] or [[https://msdn.microsoft.com/commandline/wsl/about][WSL]].
-
-Put this in your ~~/.profile~
-#+begin_src bash
-if [ ! -f /tmp/tk-ssh-auth.sock ]; then
-  tk-ssh-agent --quiet &
-  export SSH_AUTH_SOCK="/tmp/tk-ssh-auth.sock"
-  ssh-add
-fi
-#+end_src
-
 *** From source
 **** Install [[https://golang.org/dl/][Golang]]
 This is operating systems dependent, use a package manager like apt-get or brew.
@@ -62,9 +50,32 @@ make install
 #+end_src
 
 ** Usage
+
+*** Linux
+Use the systemd socket activated service
+#+begin_src bash
+tk-ssh-agent enroll --email <youremail@example.com>
+export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/tk-ssh-auth.sock
+ssh username@host
+#+end_src
+
+*** OSX
+OSX usage is documented in the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key Hombebrew Tap]]
+
+*** Windows/WSL
+SSH agents only work in the context of [[https://www.cygwin.com/][Cygwin]], [[https://git-for-windows.github.io/][Git for Windows]] or [[https://msdn.microsoft.com/commandline/wsl/about][WSL]].
+
+Put this in your =~/.profile=
+#+begin_src bash
+if [ ! -f /tmp/tk-ssh-auth.sock ]; then
+  tk-ssh-agent --quiet &
+fi
+export SSH_AUTH_SOCK="/tmp/tk-ssh-auth.sock"
+ssh-add
+#+end_src
+
+*** Manual
 #+begin_src bash
 tk-ssh-agent enroll --email <youremail@example.com>
 tk-ssh-agent agent  # Runs the agent, will block your terminal
 #+end_src
-
-For more idiomatic easy everyday use install and use the [[https://github.com/trustedkey/tk-ssh-agent/tree/master/systemd/][systemd]] or the [[https://github.com/trustedkey/homebrew-trustedkey][OSX launchd service]]
