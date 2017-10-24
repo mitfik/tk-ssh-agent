@@ -48,7 +48,7 @@ func OneTimePassword(key []byte, message []byte) (ret string) {
 	truncatedHash := fmt.Sprint(readInt32(hash[offset:offset+4]) & 0x7FFFFFFF)
 	paddedHash := "00000" + truncatedHash
 
-	return paddedHash[len(paddedHash)-6 : len(paddedHash)]
+	return paddedHash[len(paddedHash)-6:]
 }
 
 // UserPubKeyHexToAddress ...

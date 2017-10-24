@@ -64,8 +64,8 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 		if err != nil {
 			panic(err)
 		}
-		
-	} else {	
+
+	} else {
 		listener, err := net.Listen("unix", sockPath)
 		if err != nil {
 			panic(fmt.Sprintf("Listen error: %s", err))
@@ -85,7 +85,7 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 		signal.Notify(c, syscall.SIGHUP)
 		signal.Notify(c, syscall.SIGTERM)
 		go func() {
-			for _ = range c {
+			for range c {
 				cleanup()
 				os.Exit(0)
 			}
@@ -126,7 +126,7 @@ func AgentMain(quiet bool, outputShell string, configPath string, sockPath strin
 			}
 		}(listener)
 	}
-	
+
 	for {
 		select {
 		case c := <-agentConns:

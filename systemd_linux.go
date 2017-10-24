@@ -21,11 +21,11 @@ along with Trusted Key SSH-Agent.  If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
+	"errors"
 	"net"
 	"os"
 	"strconv"
 	"syscall"
-	"errors"
 )
 
 // fnctl syscall wrapper
@@ -74,7 +74,7 @@ func ListenSystemdFds() ([]net.Listener, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		listeners = append(listeners, listener)
 	}
 
