@@ -16,7 +16,7 @@ install:
 build:
 	env CGO_ENABLED=0 GOPATH=$(GOPATH) go build -asmflags="-trimpath=$(BUILD_DIR)" -gcflags="-trimpath=$(BUILD_DIR)" -ldflags $(LDFLAGS) -o tk-ssh-agent
 
-deb: build compress
+deb: build
 	mkdir -p pkg/usr/bin/
 	mkdir -p pkg/usr/lib/systemd/user/
 	cp -a tk-ssh-agent pkg/usr/bin/
@@ -24,13 +24,10 @@ deb: build compress
 	fpm -f -s dir -t deb -v $(PKG_VERSION) -n $(PKG_NAME) --license=$(PKG_LICENSE) --maintainer=$(PKG_MAINTAINER) --description=$(PKG_DESCRIPTION) -a native -C pkg/
 	./scripts/sign_deb.py --deb tk-ssh-agent_$(PKG_VERSION)_amd64.deb
 
-rpm: build compress
+rpm: build
 	mkdir -p pkg/usr/bin/
 	cp -a tk-ssh-agent pkg/usr/bin/
 	fpm -f -s dir -t rpm -v $(PKG_VERSION) -n $(PKG_NAME) --license=$(PKG_LICENSE) --maintainer=$(PKG_MAINTAINER) --description=$(PKG_DESCRIPTION) -a native --rpm-sign -C pkg/
-
-compress:
-	upx tk-ssh-agent
 
 clean:
 	rm -rf pkg

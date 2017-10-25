@@ -6,7 +6,6 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     go
-    upx
     gocode
     golint
   ] ++ (if stdenv.isLinux then [
