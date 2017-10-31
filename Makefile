@@ -1,3 +1,5 @@
+.PHONY: all install install-deps build clean rpm deb compress
+
 LDFLAGS="-w -s"
 BUILD_DIR=`pwd`
 GOPATH=`pwd`/vendor
