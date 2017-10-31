@@ -67,9 +67,7 @@ SSH agents only work in the context of [[https://www.cygwin.com/][Cygwin]], [[ht
 
 Put this in your =~/.profile=
 #+begin_src bash
-if [ ! -f /tmp/tk-ssh-auth.sock ]; then
-  tk-ssh-agent --quiet &
-fi
+pgrep 'tk-ssh-agent' > /dev/null || (rm -f /tmp/tk-ssh-auth.sock && tk-ssh-agent agent --quiet &)
 export SSH_AUTH_SOCK="/tmp/tk-ssh-auth.sock"
 ssh-add
 #+end_src
