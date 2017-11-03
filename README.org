@@ -1,19 +1,62 @@
 * Trusted Key SSH Agent
 [[https://travis-ci.org/trustedkey/tk-ssh-agent][https://travis-ci.org/trustedkey/tk-ssh-agent.svg?branch=master]]
 
-SSH Agent utilizing the [[https://trustedkey.com/][Trusted Key app]]
+SSH Agent utilizing the [[https://www.trustedkey.com/product/trusted-key-app/][Trusted Key App]]
 
 ** Installation
 *** Debian/Ubuntu
-Add the following to your sources.list (or sources.list.d)
+Add to /etc/apt/sources.list file:
 #+begin_src
 deb [arch=amd64] https://deb.trustedkey.com/ /
 #+end_src
 
+Install the tk-ssh-agent:
 #+begin_src bash
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FA75289B489AE1A51BCA18ABED58F95069B004F5
 apt-get update
 apt-get install tk-ssh-agent
+#+end_src
+
+Use the systemd socket activated service
+#+begin_src bash
+tk-ssh-agent enroll --email <youremail@example.com>
+export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/tk-ssh-auth.sock
+ssh username@host
+#+end_src
+
+*** Windows/WSL
+SSH agents only work in the context of [[https://www.cygwin.com/][Cygwin]], [[https://git-for-windows.github.io/][Git for Windows]] or [[https://msdn.microsoft.com/commandline/wsl/about][WSL]].
+
+Add to /etc/apt/sources.list file:
+#+begin_src
+deb [arch=amd64] https://deb.trustedkey.com/ /
+#+end_src
+
+Install the tk-ssh-agent:
+#+begin_src
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FA75289B489AE1A51BCA18ABED58F95069B004F5
+apt-get update
+apt-get install tk-ssh-agent
+#+end_src
+
+Tie the tk-ssh-agent to your Trusted Key Mobile App:
+#+begin_src
+tk-ssh-agent enroll --email <youremail@example.com>  # use email you registered with Trusted Key App
+Verify enrollment with Trusted Key App
+#+end_src
+
+**** Scripted Operation
+Put this in your ~/.profile:
+#+begin_src bash
+pgrep 'tk-ssh-agent' > /dev/null || (rm -f /tmp/tk-ssh-auth.sock && tk-ssh-agent agent --quiet &)
+export SSH_AUTH_SOCK="/tmp/tk-ssh-auth.sock"
+ssh-add
+#+end_src
+
+**** Manual Operation
+#+begin_src bash
+tk-ssh-agent agent  # Runs the agent, will block your terminal
+export SSH_AUTH_SOCK='/tmp/tk-ssh-auth.sock'
 #+end_src
 
 *** Redhat/Fedora
@@ -31,11 +74,11 @@ gpgkey=https://pgp.mit.edu/pks/lookup?op=get&options=mr&search=0xED58F95069B004F
 yum install tk-ssh-agent
 #+end_src
 
-*** NixOS
-Use the [[https://github.com/trustedkey/nixpkgs-trustedkey][Trusted key nixpkgs overlay]]
-
-*** Mac OSX
-Use the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key homebrew tap]]
+Tie the tk-ssh-agent to your Trusted Key Mobile App:
+#+begin_src
+tk-ssh-agent enroll --email <youremail@example.com>  # use email you registered with Trusted Key App
+Verify enrollment with Trusted Key App
+#+end_src
 
 *** From source
 **** Install [[https://golang.org/dl/][Golang]]
@@ -49,31 +92,10 @@ make
 make install
 #+end_src
 
-** Usage
+** Other Repositories
 
-*** Linux
-Use the systemd socket activated service
-#+begin_src bash
-tk-ssh-agent enroll --email <youremail@example.com>
-export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/tk-ssh-auth.sock
-ssh username@host
-#+end_src
+*** NixOS
+Use the [[https://github.com/trustedkey/nixpkgs-trustedkey][Trusted key nixpkgs overlay]]
 
-*** OSX
-OSX usage is documented in the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key Hombebrew Tap]]
-
-*** Windows/WSL
-SSH agents only work in the context of [[https://www.cygwin.com/][Cygwin]], [[https://git-for-windows.github.io/][Git for Windows]] or [[https://msdn.microsoft.com/commandline/wsl/about][WSL]].
-
-Put this in your =~/.profile=
-#+begin_src bash
-pgrep 'tk-ssh-agent' > /dev/null || (rm -f /tmp/tk-ssh-auth.sock && tk-ssh-agent agent --quiet &)
-export SSH_AUTH_SOCK="/tmp/tk-ssh-auth.sock"
-ssh-add
-#+end_src
-
-*** Manual
-#+begin_src bash
-tk-ssh-agent enroll --email <youremail@example.com>
-tk-ssh-agent agent  # Runs the agent, will block your terminal
-#+end_src
+*** Mac OSX
+Use the [[https://github.com/trustedkey/homebrew-trustedkey][Trusted Key homebrew tap]]
