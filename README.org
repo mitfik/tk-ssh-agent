@@ -12,7 +12,7 @@ deb [arch=amd64] https://deb.trustedkey.com/ /
 
 Install the tk-ssh-agent:
 #+begin_src bash
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FA75289B489AE1A51BCA18ABED58F95069B004F5
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ECF25D3C6EFE67F3C507613210FEB5D9B9357BB5
 apt-get update
 apt-get install tk-ssh-agent
 #+end_src
@@ -67,7 +67,7 @@ name=Trusted Key repository
 baseurl=https://rpm.trustedkey.com/
 enabled=1
 gpgcheck=1
-gpgkey=https://pgp.mit.edu/pks/lookup?op=get&options=mr&search=0xED58F95069B004F5
+gpgkey=https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&options=mr&search=0x10FEB5D9B9357BB5
 #+end_src
 
 #+begin_src bash
