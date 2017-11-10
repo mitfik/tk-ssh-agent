@@ -1,9 +1,12 @@
 * Trusted Key SSH Agent
 [[https://travis-ci.org/trustedkey/tk-ssh-agent][https://travis-ci.org/trustedkey/tk-ssh-agent.svg?branch=master]]
 
-SSH Agent utilizing the [[https://www.trustedkey.com/product/trusted-key-app/][Trusted Key App]]
+SSH Agent utilizing the [[https://www.trustedkey.com/product/trusted-key-app/][Trusted Key mobile App]]
 
 For more information go to [[https://ssh.trustedkey.com][ssh.trustedkey.com]]
+
+** Blockchain integration
+Together with the optional server-side service [[https://github.com/trustedkey/tk-ssh-authkeys][tk-ssh-authkeys]] can leverage the Ethereum based Trusted Key blockchain for self-serve key revocation and recovery.
 
 ** Installation
 *** Debian/Ubuntu
